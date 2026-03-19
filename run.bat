@@ -1,4 +1,5 @@
 @echo off
+setlocal enabledelayedexpansion
 echo === Clip Cutter ===
 echo.
 
@@ -12,7 +13,14 @@ if %errorlevel% neq 0 (
 
 pip install openpyxl >nul 2>&1
 
-python "%~dp0clip_cutter.py" %*
+set "INPUT_FOLDER="
+set /p INPUT_FOLDER="Path to MP4 folder (Enter for default 'input' folder): "
+
+if defined INPUT_FOLDER (
+    python "%~dp0clip_cutter.py" --input "!INPUT_FOLDER!"
+) else (
+    python "%~dp0clip_cutter.py"
+)
 
 echo.
 pause

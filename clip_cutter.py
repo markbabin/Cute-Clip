@@ -12,7 +12,7 @@ except ImportError:
     sys.exit(1)
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
-INPUT_DIR = SCRIPT_DIR / "input"
+DEFAULT_INPUT_DIR = SCRIPT_DIR / "input"
 OUTPUT_DIR = SCRIPT_DIR / "output"
 
 # Channel name mapping: Excel name -> what appears in filenames
@@ -171,15 +171,27 @@ def cut_clip(input_path, output_path, start, end):
 
 
 def main():
-    # Find Excel file
-    if len(sys.argv) > 1:
-        excel_path = Path(sys.argv[1])
-    else:
-        # Look for .xlsx in script directory
+    # Usage: python clip_cutter.py [spreadsheet.xlsx] [--input FOLDER]
+    excel_path = None
+    input_dir = DEFAULT_INPUT_DIR
+
+    args = sys.argv[1:]
+    i = 0
+    while i < len(args):
+        if args[i] == "--input" and i + 1 < len(args):
+            input_dir = Path(args[i + 1])
+            i += 2
+        elif not args[i].startswith("--"):
+            excel_path = Path(args[i])
+            i += 1
+        else:
+            i += 1
+
+    if not excel_path:
         xlsx_files = list(SCRIPT_DIR.glob("*.xlsx"))
         if not xlsx_files:
             print(f"No .xlsx file found in {SCRIPT_DIR}")
-            print("Usage: python clip_cutter.py [spreadsheet.xlsx]")
+            print("Usage: python clip_cutter.py [spreadsheet.xlsx] [--input FOLDER]")
             sys.exit(1)
         if len(xlsx_files) > 1:
             print("Multiple .xlsx files found, please specify one:")
@@ -188,18 +200,21 @@ def main():
             sys.exit(1)
         excel_path = xlsx_files[0]
 
-    print(f"Excel: {excel_path.name}")
-    print(f"Input: {INPUT_DIR}")
+    print(f"Excel:  {excel_path.name}")
+    print(f"Input:  {input_dir}")
     print(f"Output: {OUTPUT_DIR}")
 
-    INPUT_DIR.mkdir(exist_ok=True)
     OUTPUT_DIR.mkdir(exist_ok=True)
 
+    if not input_dir.exists():
+        print(f"\nInput folder not found: {input_dir}")
+        sys.exit(1)
+
     # Scan input folder for MP4 files
-    mp4_files = list(INPUT_DIR.glob("*.mp4")) + list(INPUT_DIR.glob("*.MP4"))
+    mp4_files = list(input_dir.glob("*.mp4")) + list(input_dir.glob("*.MP4"))
     if not mp4_files:
-        print(f"\nNo MP4 files found in {INPUT_DIR}")
-        print("Place your MP4 files in the 'input' folder and run again.")
+        print(f"\nNo MP4 files found in {input_dir}")
+        print("Place your MP4 files in the input folder and run again.")
         sys.exit(1)
 
     print(f"Found {len(mp4_files)} MP4 file(s)\n")
